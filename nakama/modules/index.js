@@ -44,8 +44,8 @@ function InitModule(ctx, logger, nk, initializer) {
 function rpcCreateRoom(ctx, logger, nk, payload) {
   var input = parsePayload(payload);
   var matchId = nk.matchCreate(MATCH_NAME, {
-    creatorId: ctx.userId,
-    creatorUsername: ctx.username || "Player",
+    creatorId: ctxUserId(ctx),
+    creatorUsername: ctxUsername(ctx),
     roomName: input.roomName || "Open Room",
     mode: normalizeMode(input.mode),
   });
@@ -80,7 +80,7 @@ function rpcSubmitMove(ctx, logger, nk, payload) {
   var input = parsePayload(payload);
   nk.matchSignal(input.matchId, JSON.stringify({
     type: "move",
-    userId: ctx.userId,
+    userId: ctxUserId(ctx),
     position: input.position,
   }));
   return JSON.stringify({ ok: true });
@@ -547,4 +547,12 @@ function userIdOf(presence) {
 
 function usernameOf(presence) {
   return presence.username || presence.user_name || "Player";
+}
+
+function ctxUserId(ctx) {
+  return ctx.userId || ctx.user_id || "";
+}
+
+function ctxUsername(ctx) {
+  return ctx.username || ctx.user_name || "Player";
 }
