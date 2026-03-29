@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: tictactoe-nakama
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./nakama/Dockerfile
+    dockerContext: ./nakama
+    healthCheckPath: /healthcheck
+    envVars:
+      - key: NAKAMA_DATABASE_ADDRESS
+        fromDatabase:
+          name: tictactoe-db
+          property: connectionString
+      - key: NAKAMA_SERVER_KEY
+        generateValue: true
+      - key: NAKAMA_SESSION_KEY
+        generateValue: true
+      - key: NAKAMA_REFRESH_KEY
+        generateValue: true
+      - key: NAKAMA_HTTP_KEY
+        generateValue: true
+      - key: NAKAMA_CONSOLE_USERNAME
+        value: admin
+      - key: NAKAMA_CONSOLE_PASSWORD
+        generateValue: true
+      - key: NAKAMA_CONSOLE_SIGNING_KEY
+        generateValue: true
+
+  - type: web
+    name: tictactoe-frontend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    envVars:
+      - key: VITE_NAKAMA_HOST
+        value: tictactoe-nakama.onrender.com
+      - key: VITE_NAKAMA_PORT
+        value: "443"
+      - key: VITE_NAKAMA_SCHEME
+        value: https
+      - key: VITE_NAKAMA_SERVER_KEY
+        sync: false
+
+databases:
+  - name: tictactoe-db
+    plan: free

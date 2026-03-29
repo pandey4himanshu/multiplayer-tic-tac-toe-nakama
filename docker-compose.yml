@@ -1,0 +1,31 @@
+services:
+  cockroachdb:
+    image: cockroachdb/cockroach:v23.1.11
+    command: start-single-node --insecure --store=attrs=ssd,path=/var/lib/cockroach/
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    volumes:
+      - cockroach_data:/var/lib/cockroach
+
+  nakama:
+    build:
+      context: ./nakama
+    image: tictactoe-nakama:local
+    depends_on:
+      - cockroachdb
+    environment:
+      NAKAMA_DATABASE_ADDRESS: root@cockroachdb:26257
+      NAKAMA_SERVER_KEY: defaultkey
+      NAKAMA_SESSION_KEY: defaultencryptionkey
+      NAKAMA_REFRESH_KEY: defaultrefreshencryptionkey
+      NAKAMA_HTTP_KEY: defaulthttpkey
+      NAKAMA_CONSOLE_USERNAME: admin
+      NAKAMA_CONSOLE_PASSWORD: password
+      NAKAMA_CONSOLE_SIGNING_KEY: defaultsigningkey
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+volumes:
+  cockroach_data:

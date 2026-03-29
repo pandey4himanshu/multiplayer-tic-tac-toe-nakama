@@ -1,0 +1,29 @@
+services:
+  cockroachdb:
+    image: cockroachdb/cockroach:v23.1.11
+    command: start-single-node --insecure --store=attrs=ssd,path=/var/lib/cockroach/
+    volumes:
+      - cockroach_prod_data:/var/lib/cockroach
+
+  nakama:
+    build:
+      context: ./nakama
+    image: tictactoe-nakama:prod
+    depends_on:
+      - cockroachdb
+    env_file:
+      - .env.nakama
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+
+  frontend:
+    build:
+      context: ./frontend
+    image: tictactoe-frontend:prod
+    ports:
+      - "8088:80"
+
+volumes:
+  cockroach_prod_data:
