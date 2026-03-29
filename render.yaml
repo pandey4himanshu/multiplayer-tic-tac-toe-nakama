@@ -12,7 +12,7 @@ services:
           name: tictactoe-db
           property: connectionString
       - key: NAKAMA_SERVER_KEY
-        generateValue: true
+        value: defaultkey
       - key: NAKAMA_SESSION_KEY
         generateValue: true
       - key: NAKAMA_REFRESH_KEY
@@ -40,7 +40,7 @@ services:
       - key: VITE_NAKAMA_SCHEME
         value: https
       - key: VITE_NAKAMA_SERVER_KEY
-        sync: false
+        value: defaultkey
 
 databases:
   - name: tictactoe-db
