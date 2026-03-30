@@ -91,11 +91,18 @@ function rpcGetLeaderboard(ctx, logger, nk, payload) {
   var top = [];
   for (var i = 0; i < records.records.length; i += 1) {
     var record = records.records[i];
+    var ownerId = record.ownerId || record.owner_id || "";
+    var stats = defaultStats();
+    try {
+      stats = readPlayerStats(nk, ownerId);
+    } catch (error) {
+      logger.error("Stats read failed while listing leaderboard for %s: %s", ownerId, error);
+    }
     top.push({
       username: record.username,
       rank: record.rank,
       score: record.score,
-      metadata: record.metadata || {},
+      metadata: stats,
     });
   }
   return JSON.stringify({ entries: top });
@@ -376,8 +383,8 @@ function updateMatchOutcome(logger, nk, loser, winner, reason) {
   }
 
   try {
-    nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score, winnerStats.bestStreak, winnerStats, 2);
-    nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score, loserStats.bestStreak, loserStats, 2);
+    nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score, winnerStats.bestStreak, null, 2);
+    nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score, loserStats.bestStreak, null, 2);
   } catch (error) {
     logger.error("Leaderboard record write failed after %s: %s", reason, error);
   }
@@ -411,7 +418,7 @@ function updateDrawStats(logger, nk, players) {
     }
 
     try {
-      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, stats, 2);
+      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, null, 2);
     } catch (error) {
       logger.error("Leaderboard record write failed after draw for %s: %s", player.userId, error);
     }
