@@ -344,29 +344,42 @@ function updateMatchOutcome(logger, nk, loser, winner, reason) {
   if (!winner || !loser) {
     return;
   }
+  var winnerStats;
+  var loserStats;
+
   try {
-    var winnerStats = readPlayerStats(nk, winner.userId);
-    var loserStats = readPlayerStats(nk, loser.userId);
+    winnerStats = readPlayerStats(nk, winner.userId);
+    loserStats = readPlayerStats(nk, loser.userId);
+  } catch (error) {
+    logger.error("Stats read failed after %s: %s", reason, error);
+    return;
+  }
 
-    winnerStats.wins += 1;
-    winnerStats.currentStreak += 1;
-    if (winnerStats.currentStreak > winnerStats.bestStreak) {
-      winnerStats.bestStreak = winnerStats.currentStreak;
-    }
-    winnerStats.score += 3;
-    winnerStats.lastResult = reason;
+  winnerStats.wins += 1;
+  winnerStats.currentStreak += 1;
+  if (winnerStats.currentStreak > winnerStats.bestStreak) {
+    winnerStats.bestStreak = winnerStats.currentStreak;
+  }
+  winnerStats.score += 3;
+  winnerStats.lastResult = reason;
 
-    loserStats.losses += 1;
-    loserStats.currentStreak = 0;
-    loserStats.lastResult = reason;
+  loserStats.losses += 1;
+  loserStats.currentStreak = 0;
+  loserStats.lastResult = reason;
 
+  try {
     writePlayerStats(nk, winner, winnerStats);
     writePlayerStats(nk, loser, loserStats);
+  } catch (error) {
+    logger.error("Stats storage write failed after %s: %s", reason, error);
+    return;
+  }
 
+  try {
     nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score, winnerStats.bestStreak, winnerStats, 2);
     nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score, loserStats.bestStreak, loserStats, 2);
   } catch (error) {
-    logger.error("Leaderboard/stat update failed after %s: %s", reason, error);
+    logger.error("Leaderboard record write failed after %s: %s", reason, error);
   }
 }
 
@@ -374,19 +387,34 @@ function updateDrawStats(logger, nk, players) {
   if (!players || players.length !== 2) {
     return;
   }
-  try {
-    for (var i = 0; i < players.length; i += 1) {
-      var player = players[i];
-      var stats = readPlayerStats(nk, player.userId);
-      stats.draws += 1;
-      stats.currentStreak = 0;
-      stats.score += 1;
-      stats.lastResult = "draw";
-      writePlayerStats(nk, player, stats);
-      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, stats, 2);
+  for (var i = 0; i < players.length; i += 1) {
+    var player = players[i];
+    var stats;
+
+    try {
+      stats = readPlayerStats(nk, player.userId);
+    } catch (error) {
+      logger.error("Stats read failed after draw for %s: %s", player.userId, error);
+      continue;
     }
-  } catch (error) {
-    logger.error("Leaderboard/stat update failed after draw: %s", error);
+
+    stats.draws += 1;
+    stats.currentStreak = 0;
+    stats.score += 1;
+    stats.lastResult = "draw";
+
+    try {
+      writePlayerStats(nk, player, stats);
+    } catch (error) {
+      logger.error("Stats storage write failed after draw for %s: %s", player.userId, error);
+      continue;
+    }
+
+    try {
+      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, stats, 2);
+    } catch (error) {
+      logger.error("Leaderboard record write failed after draw for %s: %s", player.userId, error);
+    }
   }
 }
 
