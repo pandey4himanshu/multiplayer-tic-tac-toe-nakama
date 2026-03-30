@@ -1,5 +1,5 @@
 var MATCH_NAME = "tic_tac_toe_match";
-var LEADERBOARD_ID = "tictactoe_global";
+var LEADERBOARD_ID = "tictactoe_global_v2";
 var PLAYER_STATS_COLLECTION = "player_stats";
 var PLAYER_STATS_KEY = "summary";
 var MOVE_OPCODE = 1;
@@ -13,7 +13,7 @@ function InitModule(ctx, logger, nk, initializer) {
       LEADERBOARD_ID,
       true,
       "desc",
-      "best",
+      "set",
       "",
       { title: "Global Tic-Tac-Toe Ranking" },
       true
@@ -383,8 +383,8 @@ function updateMatchOutcome(logger, nk, loser, winner, reason) {
   }
 
   try {
-    nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score, winnerStats.bestStreak, null, 2);
-    nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score, loserStats.bestStreak, null, 2);
+    nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score);
+    nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score);
   } catch (error) {
     logger.error("Leaderboard record write failed after %s: %s", reason, error);
   }
@@ -418,7 +418,7 @@ function updateDrawStats(logger, nk, players) {
     }
 
     try {
-      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, null, 2);
+      nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score);
     } catch (error) {
       logger.error("Leaderboard record write failed after draw for %s: %s", player.userId, error);
     }
