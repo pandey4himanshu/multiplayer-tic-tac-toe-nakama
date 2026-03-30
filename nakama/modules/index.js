@@ -425,7 +425,12 @@ function readPlayerStats(nk, userId) {
     userId: userId,
   }]);
   if (records && records.length > 0 && records[0].value) {
-    return safeJson(records[0].value) || defaultStats();
+    if (typeof records[0].value === "string") {
+      return safeJson(records[0].value) || defaultStats();
+    }
+    if (typeof records[0].value === "object") {
+      return records[0].value;
+    }
   }
   return defaultStats();
 }
@@ -435,7 +440,7 @@ function writePlayerStats(nk, player, stats) {
     collection: PLAYER_STATS_COLLECTION,
     key: PLAYER_STATS_KEY,
     userId: player.userId,
-    value: JSON.stringify(stats),
+    value: stats,
     permissionRead: 2,
     permissionWrite: 0,
   }]);
