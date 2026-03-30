@@ -1,6 +1,6 @@
 # Multiplayer Tic-Tac-Toe with Nakama
 
-This project is a multiplayer Tic-Tac-Toe game built with React on the frontend and Nakama on the backend.
+This project is a multiplayer Tic-Tac-Toe game built with a React frontend and a Nakama backend. The game uses a server-authoritative approach, so all match state, move validation, turn handling, win detection, disconnect handling, and timed mode logic run on the backend.
 
 ## Tech stack
 
@@ -8,47 +8,53 @@ This project is a multiplayer Tic-Tac-Toe game built with React on the frontend 
 - TypeScript
 - Vite
 - Nakama
-- Docker Compose
-- CockroachDB
+- Docker
+- CockroachDB for local development
+- PostgreSQL-compatible hosted database for cloud deployment
 
-## Features completed
+## What is included
 
-- Real-time multiplayer Tic-Tac-Toe
-- Server-authoritative game logic
+- Responsive web interface designed to work well on desktop and mobile
+- Real-time board updates
+- Player names, symbols, match status, and turn state in the UI
 - Server-side move validation
-- Room creation
-- Room discovery and join flow
+- Room creation and room discovery
+- Manual room joining
 - Automatic matchmaking
 - Disconnect handling
-- Timed mode
-- Leaderboard with score, wins, losses, draws, and streak data
-- Responsive frontend UI
+- Timed mode with turn countdown and timeout loss
+- Support for multiple simultaneous matches through separate Nakama match instances
+- Backend and frontend deployment on Render
 
-## Project structure
+## Live deployment
 
-The frontend code is inside the `frontend` folder.
+- Frontend: [https://multiplayer-tic-tac-toe-nakama-frontend.onrender.com](https://multiplayer-tic-tac-toe-nakama-frontend.onrender.com)
+- Nakama backend: [https://multiplayer-tic-tac-toe-nakama.onrender.com](https://multiplayer-tic-tac-toe-nakama.onrender.com)
+- Health check: [https://multiplayer-tic-tac-toe-nakama.onrender.com/healthcheck](https://multiplayer-tic-tac-toe-nakama.onrender.com/healthcheck)
+- Repository: [https://github.com/pandey4himanshu/multiplayer-tic-tac-toe-nakama](https://github.com/pandey4himanshu/multiplayer-tic-tac-toe-nakama)
 
-The Nakama match logic is inside `nakama/modules/index.js`.
+## Architecture
 
-Local Docker setup is defined in `docker-compose.yml`.
+The frontend is responsible for login, room browsing, room creation, matchmaking, board rendering, and live updates from Nakama.
 
-Production-oriented Docker setup is added in `docker-compose.prod.yml`.
+The backend uses Nakama authoritative matches. Every room runs as its own match instance, which keeps the game state isolated from other rooms. The server checks whether a move is valid before applying it and then broadcasts the updated state to connected players.
 
-## How it works
+There are two ways to start a game:
 
-The frontend handles player login, room creation, room join, matchmaking, live board updates, and leaderboard display.
+- Open a room and let another player join it from the room list
+- Use matchmaking in two clients with the same mode selected
 
-The backend runs the actual game state on the server. Turn order, move validation, win detection, draw handling, disconnect handling, timed mode, and leaderboard updates are controlled in the Nakama match handler.
-
-## Local setup
+## Setup and installation
 
 ### Requirements
 
-- Node.js 20 or later
+- Node.js 20 or newer
 - npm
 - Docker Desktop
 
-### Start the backend
+### Run locally
+
+Start the backend:
 
 ```bash
 make up
@@ -56,12 +62,12 @@ make up
 
 This starts CockroachDB and Nakama locally.
 
-Backend endpoints:
+Local backend endpoints:
 
 - API: `http://127.0.0.1:7350`
 - Console: `http://127.0.0.1:7351`
 
-### Start the frontend
+Start the frontend:
 
 ```bash
 cd frontend
@@ -70,39 +76,43 @@ npm run build
 npx vite preview --host 0.0.0.0 --port 4174
 ```
 
-Then open:
+Then open `http://localhost:4174`.
 
-- `http://localhost:4174`
+## Deployment notes
 
-## Environment configuration
+The current cloud deployment uses Render for both the frontend and the Nakama service. The backend is configured through environment variables, including the database connection string and Nakama keys.
 
-For local frontend configuration, create a `.env` file inside `frontend` if needed.
+For the frontend deployment, the important environment variables are:
 
-Example values:
+- `VITE_NAKAMA_HOST`
+- `VITE_NAKAMA_PORT`
+- `VITE_NAKAMA_SCHEME`
+- `VITE_NAKAMA_SERVER_KEY`
 
-```bash
-VITE_NAKAMA_HOST=127.0.0.1
-VITE_NAKAMA_PORT=7350
-VITE_NAKAMA_SCHEME=http
-VITE_NAKAMA_SERVER_KEY=defaultkey
-```
+For the backend deployment, the important environment variables are:
 
-For production-oriented Nakama configuration, `.env.nakama.example` is included at the project root.
+- `NAKAMA_DATABASE_ADDRESS`
+- `NAKAMA_SERVER_KEY`
+- `NAKAMA_SESSION_KEY`
+- `NAKAMA_REFRESH_KEY`
+- `NAKAMA_HTTP_KEY`
+- `NAKAMA_CONSOLE_USERNAME`
+- `NAKAMA_CONSOLE_PASSWORD`
+- `NAKAMA_CONSOLE_SIGNING_KEY`
 
-For production-oriented frontend configuration, `frontend/.env.production.example` is included.
+Example environment files are included in the repository:
+
+- `.env.nakama.example`
+- `frontend/.env.production.example`
 
 ## How to test multiplayer
 
-1. Open the app in two browser tabs.
-2. Enter two different player names.
-3. Create a room in one tab and join it from the other tab, or use automatic matchmaking in both tabs.
-4. Play turns from both tabs and verify that the board updates in real time.
-5. Test timed mode and disconnect handling.
+1. Open the frontend in two browser tabs.
+2. Enter a different player name in each tab.
+3. Either create a room in one tab and join it in the other, or click `Find Match` in both tabs with the same mode selected.
+4. Play a full round and confirm that turns and board updates are synchronized.
+5. Switch to timed mode and verify that the countdown is shown and the match ends on timeout.
 
-## Submission status
+## Current note
 
-The main application, local Docker setup, game logic, matchmaking flow, timed mode, and leaderboard tracking are completed in this repository.
-
-The repository is initialized locally with Git and is ready to be pushed.
-
-Actual public deployment and pushing to a GitHub or GitLab remote still require the target account credentials and deployment target details.
+The main multiplayer flow, room system, matchmaking, timed mode, and deployment are working. The leaderboard persistence path is implemented in the backend and frontend, and the latest backend change for leaderboard writes should be deployed before final submission verification.
