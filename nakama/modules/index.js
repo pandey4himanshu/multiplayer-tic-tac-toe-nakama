@@ -209,7 +209,7 @@ function matchLeave(ctx, logger, nk, dispatcher, tick, state, presences) {
         connectedPlayers[0].symbol === "X" ? "O" : "X"
       );
       finishGame(state, connectedPlayers[0].symbol, []);
-      updateMatchOutcome(nk, disconnectedPlayer, connectedPlayers[0], "disconnect");
+      updateMatchOutcome(logger, nk, disconnectedPlayer, connectedPlayers[0], "disconnect");
       state.status = "finished";
       broadcastSystem(dispatcher, {
         type: "player_left",
@@ -242,11 +242,11 @@ function matchLoop(ctx, logger, nk, dispatcher, tick, state, messages) {
     if (!data) {
       continue;
     }
-    processMove(state, userIdOf(message.sender || message.presence), data.position, dispatcher, nk);
+    processMove(state, userIdOf(message.sender || message.presence), data.position, dispatcher, nk, logger);
   }
 
   if (state.pendingMove) {
-    processMove(state, state.pendingMove.userId, state.pendingMove.position, dispatcher, nk);
+    processMove(state, state.pendingMove.userId, state.pendingMove.position, dispatcher, nk, logger);
     state.pendingMove = null;
   }
 
@@ -259,7 +259,7 @@ function matchLoop(ctx, logger, nk, dispatcher, tick, state, messages) {
         type: "timeout",
         message: timedOut.username + " ran out of time.",
       });
-      updateMatchOutcome(nk, timedOut, opponent, "timeout");
+      updateMatchOutcome(logger, nk, timedOut, opponent, "timeout");
       broadcastState(dispatcher, state);
     }
   }
@@ -289,7 +289,7 @@ function matchTerminate(ctx, logger, nk, dispatcher, tick, state, graceSeconds) 
   return { state: state };
 }
 
-function processMove(state, userId, position, dispatcher, nk) {
+function processMove(state, userId, position, dispatcher, nk, logger) {
   var player = findPlayer(state, userId);
   if (typeof position === "string") {
     position = parseInt(position, 10);
@@ -310,7 +310,7 @@ function processMove(state, userId, position, dispatcher, nk) {
     broadcastState(dispatcher, state);
     if (state.players.length === 2) {
       var loser = findPlayerBySymbol(state, winnerInfo.winner === "X" ? "O" : "X");
-      updateMatchOutcome(nk, loser, player, "win");
+      updateMatchOutcome(logger, nk, loser, player, "win");
     }
     return true;
   }
@@ -320,7 +320,7 @@ function processMove(state, userId, position, dispatcher, nk) {
     state.winner = "";
     state.winningLine = [];
     state.turnDeadline = null;
-    updateDrawStats(nk, state.players);
+    updateDrawStats(logger, nk, state.players);
     broadcastState(dispatcher, state);
     return true;
   }
@@ -340,7 +340,7 @@ function finishGame(state, winnerSymbol, winningLine) {
   state.turnDeadline = null;
 }
 
-function updateMatchOutcome(nk, loser, winner, reason) {
+function updateMatchOutcome(logger, nk, loser, winner, reason) {
   if (!winner || !loser) {
     return;
   }
@@ -366,10 +366,11 @@ function updateMatchOutcome(nk, loser, winner, reason) {
     nk.leaderboardRecordWrite(LEADERBOARD_ID, winner.userId, winner.username, winnerStats.score, winnerStats.bestStreak, winnerStats, 2);
     nk.leaderboardRecordWrite(LEADERBOARD_ID, loser.userId, loser.username, loserStats.score, loserStats.bestStreak, loserStats, 2);
   } catch (error) {
+    logger.error("Leaderboard/stat update failed after %s: %s", reason, error);
   }
 }
 
-function updateDrawStats(nk, players) {
+function updateDrawStats(logger, nk, players) {
   if (!players || players.length !== 2) {
     return;
   }
@@ -385,6 +386,7 @@ function updateDrawStats(nk, players) {
       nk.leaderboardRecordWrite(LEADERBOARD_ID, player.userId, player.username, stats.score, stats.bestStreak, stats, 2);
     }
   } catch (error) {
+    logger.error("Leaderboard/stat update failed after draw: %s", error);
   }
 }
 
